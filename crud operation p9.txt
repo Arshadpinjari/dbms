@@ -1,0 +1,52 @@
+db.Employee_info.insertOne({
+"emp_id": 101,
+"name": "John Doe",
+"department": "IT",
+"position": "Software Developer",
+"salary": 60000
+})
+db.Employee_info.insertMany([
+{ "emp_id": 102, "name": "Jane Smith", "department": "HR", "position": "Manager", "salary": 70000
+},
+{ "emp_id": 103, "name": "Bob Johnson", "department": "IT", "position": "DevOps Engineer",
+"salary": 65000 }
+])
+
+db.Employee_info.find({ "department": "IT" })
+db.Employee_info.findOne({ "emp_id": 101 })
+db.Employee_info.find({ "salary": { $gt: 60000 } })
+
+db.Employee_info.updateOne(
+{ "emp_id": 101 },
+{ $set: { "salary": 62000 } }
+)
+db.Employee_info.updateMany(
+{ "department": "IT" },
+{ $mul: { "salary": 1.1 } } // Multiplying salary by 1.1 (10% increase)
+)
+
+
+db.Employee_info.deleteOne({ "emp_id": 103 })
+db.Employee_info.deleteMany({ "department": "HR" })
+
+
+db.Employee_info.save({
+"emp_id": 104, // If this ID exists, it updates; otherwise, inserts new record
+"name": "Alice Green",
+"department": "Finance",
+"position": "Analyst",
+"salary": 55000
+})
+
+db.Employee_info.find({
+$and: [
+{ "department": "IT" },
+{ "salary": { $gt: 60000 } }
+]
+})
+db.Employee_info.find({
+$or: [
+{ "department": "HR" },
+{ "salary": { $lt: 50000 } }
+]
+})

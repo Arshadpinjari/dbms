@@ -1,0 +1,54 @@
+practical 7 TRIGGER LIBRARY
+CREATE TABLE Library (
+    book_id INT PRIMARY KEY,
+    book_title VARCHAR(255),
+    author VARCHAR(255),
+    publication_year INT,
+    genre VARCHAR(100),
+    availability_status VARCHAR(50)
+);
+
+CREATE TABLE Library_Audit (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    action_type VARCHAR(10), -- 'DELETE'
+    book_id INT,
+    book_title VARCHAR(255),
+    author VARCHAR(255),
+    publication_year INT,
+    genre VARCHAR(100),
+    availability_status VARCHAR(50),
+    action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+DELIMITER $$
+CREATE TRIGGER trg_after_delete_library
+AFTER DELETE ON Library
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_Audit (action_type, book_id, book_title, author, publication_year, genre, availability_status)
+    VALUES ('DELETE', OLD.book_id, OLD.book_title, OLD.author, OLD.publication_year, OLD.genre, OLD.availability_status);
+END$$
+DELIMITER ;
+
+-- Corrected INSERT INTO Library with multiple rows
+INSERT INTO Library (book_id, book_title, author, publication_year, genre, availability_status)
+VALUES
+(1, 'Harry Potter', 'J.K. Rowling', 1997, 'Fantasy', 'Available'),
+(2, 'To Kill a Mockingbird', 'Harper Lee', 1960, 'Fiction', 'Available'),
+(3, '1984', 'George Orwell', 1949, 'Dystopian', 'Checked Out'),
+(4, 'Pride and Prejudice', 'Jane Austen', 1813, 'Romance', 'Available'),
+(5, 'The Catcher in the Rye', 'J.D. Salinger', 1951, 'Fiction', 'Checked Out');
+
+-- Optionally, inserting records in Library_Audit table manually for testing
+INSERT INTO Library_Audit (action_type, book_id, book_title, author, publication_year, genre, availability_status) 
+VALUES
+('DELETE', 3, '1984', 'George Orwell', 1949, 'Dystopian', 'Checked Out'),
+('DELETE', 5, 'The Catcher in the Rye', 'J.D. Salinger', 1951, 'Fiction', 'Checked Out');
+
+-- Test DELETE statements to trigger the Library_Audit insertion
+DELETE FROM Library WHERE book_id = 1;
+DELETE FROM Library WHERE book_id = 3;
+DELETE FROM Library WHERE book_id = 5;
+
+-- Select from Library_Audit to verify the trigger
+SELECT * FROM Library_Audit;

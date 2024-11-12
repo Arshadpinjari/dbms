@@ -1,0 +1,80 @@
+// MongoDB Aggregation and Indexing Operations
+
+// Connect to MongoDB (ensure MongoDB is running)
+const { MongoClient } = require('mongodb');
+const uri = "mongodb://localhost:27017"; // Connection URL
+const client = new MongoClient(uri);
+
+async function performAggregationAndIndexing() {
+  try {
+    // Connect to the MongoDB server
+    await client.connect();
+    console.log("Connected to MongoDB");
+
+    // Database and Collection
+    const db = client.db("healthDB");
+    const usersCollection = db.collection("users");
+
+    // 1. Indexing - Create Index on the 'age' field to improve performance on queries
+    console.log("Creating Index...");
+    await usersCollection.createIndex({ age: 1 }); // Index on the 'age' field (ascending)
+    console.log("Index Created on 'age' field");
+
+    // 2. Aggregation Operations
+    console.log("Performing Aggregation...");
+
+    // Aggregation to find average age and count of users grouped by city
+    const aggregationResult = await usersCollection.aggregate([
+      { $group: { 
+          _id: "$address.city",  // Group by city
+          averageAge: { $avg: "$age" },  // Calculate average age
+          userCount: { $sum: 1 }  // Count the number of users per city
+        }
+      },
+      { $sort: { averageAge: -1 } }  // Sort by averageAge in descending order
+    ]).toArray();
+
+    console.log("Aggregation Result (Grouped by City):", aggregationResult);
+
+    // 3. Aggregation with Multiple Stages (Filter and Project)
+    console.log("Performing Advanced Aggregation...");
+    const advancedAggregationResult = await usersCollection.aggregate([
+      { $match: { age: { $gte: 30 } } },  // Filter users with age >= 30
+      { $project: { name: 1, age: 1, email: 1, _id: 0 } },  // Project only 'name', 'age', and 'email'
+      { $sort: { age: -1 } }  // Sort by age in descending order
+    ]).toArray();
+
+    console.log("Advanced Aggregation Result:", advancedAggregationResult);
+
+    // 4. Aggregation with Lookup (Join with another collection)
+    console.log("Performing Aggregation with Lookup...");
+    const lookupResult = await usersCollection.aggregate([
+      { $lookup: {
+          from: "orders",  // Name of the other collection to join
+          localField: "email",  // Field in the 'users' collection to match
+          foreignField: "userEmail",  // Field in the 'orders' collection to match
+          as: "userOrders"  // Alias for the joined data
+        }
+      },
+      { $unwind: "$userOrders" },  // Flatten the 'userOrders' array
+      { $project: { name: 1, email: 1, "userOrders.orderId": 1, "userOrders.amount": 1 } }  // Select specific fields
+    ]).toArray();
+
+    console.log("Aggregation with Lookup Result:", lookupResult);
+
+    // 5. Using Index to Query (Efficient Querying on Indexed Field)
+    console.log("Querying with Index...");
+    const usersOver30 = await usersCollection.find({ age: { $gte: 30 } }).toArray();  // This query will benefit from the 'age' index
+    console.log("Users Age >= 30:", usersOver30);
+
+  } catch (error) {
+    console.error("Error performing aggregation and indexing operations:", error);
+  } finally {
+    // Close the connection
+    await client.close();
+    console.log("Connection Closed");
+  }
+}
+
+// Execute Aggregation and Indexing Operations
+performAggregationAndIndexing();

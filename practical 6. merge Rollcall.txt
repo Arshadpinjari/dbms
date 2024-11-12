@@ -1,0 +1,43 @@
+practical 6  merge Rollcall
+
+CREATE TABLE N_RollCall (
+Roll INT PRIMARY KEY,
+Name VARCHAR(50)
+);
+CREATE TABLE O_RollCall (
+Roll INT PRIMARY KEY,
+Name VARCHAR(50)
+);
+
+INSERT INTO N_RollCall (Roll, Name)
+VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');
+INSERT INTO O_RollCall (Roll, Name)
+VALUES (2, 'Bob'), (4, 'David');
+
+DELIMITER $$
+CREATE PROCEDURE merge_RollCall()
+BEGIN
+DECLARE v_Roll INT;
+DECLARE v_Name VARCHAR(50);
+DECLARE done INT DEFAULT 0;
+DECLARE cur CURSOR FOR
+SELECT Roll, Name FROM N_RollCall;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+OPEN cur;
+
+read_loop: LOOP
+FETCH cur INTO v_Roll, v_Name;
+IF done THEN
+LEAVE read_loop;
+END IF;
+IF NOT EXISTS (SELECT 1 FROM O_RollCall WHERE Roll = v_Roll) THEN
+INSERT INTO O_RollCall (Roll, Name) VALUES (v_Roll, v_Name);
+END IF;
+END LOOP;
+CLOSE cur;
+END$$
+DELIMITER ;
+
+CALL merge_RollCall();
+
+SELECT * FROM O_RollCall

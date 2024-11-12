@@ -1,0 +1,77 @@
+-- Practical 2_10 SQL Queries run
+
+-- Create Departments Table
+CREATE TABLE Departments (
+    DepartmentID INT PRIMARY KEY,
+    DepartmentName VARCHAR(50) NOT NULL
+);
+
+-- Create Employees Table with Constraints
+CREATE TABLE Employees (
+    EmployeeID INT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Age INT CHECK (Age > 18),
+    DepartmentID INT,
+    Salary DECIMAL(10, 2) NOT NULL,
+    CONSTRAINT fk_department FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+
+-- Create a View to Show Employee and Department Details
+CREATE VIEW EmployeeDetails AS
+SELECT e.EmployeeID, e.FirstName, e.LastName, e.Age, e.Salary, d.DepartmentName
+FROM Employees e
+JOIN Departments d ON e.DepartmentID = d.DepartmentID;
+
+-- Create an Index on LastName for faster searches
+CREATE INDEX idx_lastname ON Employees (LastName);
+
+-- Create a Sequence for EmployeeID Auto-increment (MariaDB does not support SEQUENCES directly, 
+-- so we use AUTO_INCREMENT instead in the Employees table definition)
+-- Alternatively, you can also generate auto-increment ID by using the following as part of the INSERT.
+
+-- Create a Second View as an Alias (workaround for the synonym)
+CREATE VIEW EmpDetailsView AS
+SELECT * FROM EmployeeDetails;
+
+-- Part 2: DML Statements
+
+-- Insert Data into Departments Table
+INSERT INTO Departments (DepartmentID, DepartmentName) 
+VALUES (1, 'HR'), (2, 'Finance'), (3, 'IT');
+
+-- Insert Data into Employees Table
+INSERT INTO Employees (EmployeeID, FirstName, LastName, Age, DepartmentID, Salary)
+VALUES (1, 'John', 'Doe', 30, 1, 50000.00),
+       (2, 'Jane', 'Smith', 27, 2, 45000.00),
+       (3, 'Bob', 'Brown', 35, 3, 60000.00);
+
+-- Select All Employees
+SELECT * FROM Employees;
+
+-- Select Employees with Salary Greater than $40,000
+SELECT * FROM Employees WHERE Salary > 40000;
+
+-- Select Employees by Department (e.g., DepartmentID = 2 for Finance)
+SELECT FirstName, LastName FROM Employees WHERE DepartmentID = 2;
+
+-- Update Employee Salary (Increase by 10% for EmployeeID = 1)
+UPDATE Employees SET Salary = Salary * 1.10 WHERE EmployeeID = 1;
+
+-- Delete an Employee by EmployeeID
+DELETE FROM Employees WHERE EmployeeID = 3;
+
+-- Join Query to Show Employee and Department Details
+SELECT e.FirstName, e.LastName, d.DepartmentName
+FROM Employees e
+JOIN Departments d ON e.DepartmentID = d.DepartmentID;
+
+-- Count Employees in Each Department
+SELECT DepartmentID, COUNT(*) AS EmployeeCount
+FROM Employees
+GROUP BY DepartmentID;
+
+-- Find the Maximum Salary in Each Department
+SELECT DepartmentID, MAX(Salary) AS MaxSalary
+FROM Employees
+GROUP BY DepartmentID;

@@ -1,0 +1,129 @@
+-- Create Departments Table
+CREATE TABLE IF NOT EXISTS Departments (
+    DepartmentID INT PRIMARY KEY,
+    DepartmentName VARCHAR(50) NOT NULL
+);
+
+-- Create Employees Table
+CREATE TABLE IF NOT EXISTS Employees (
+    EmployeeID INT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Age INT CHECK (Age > 18),
+    DepartmentID INT,
+    Salary DECIMAL(10, 2),
+    FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+
+-- Create Projects Table
+CREATE TABLE IF NOT EXISTS Projects (
+    ProjectID INT PRIMARY KEY,
+    ProjectName VARCHAR(50) NOT NULL,
+    DepartmentID INT,
+    FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+
+-- Insert sample data into Departments Table
+INSERT INTO Departments (DepartmentID, DepartmentName) VALUES 
+(1, 'HR'), 
+(2, 'Finance'), 
+(3, 'IT'), 
+(4, 'Marketing');
+
+-- Insert sample data into Employees Table
+INSERT INTO Employees (EmployeeID, FirstName, LastName, Age, DepartmentID, Salary) VALUES 
+(1, 'John', 'Doe', 30, 1, 50000.00),
+(2, 'Jane', 'Smith', 27, 2, 45000.00),
+(3, 'Alice', 'Johnson', 29, 3, 70000.00),
+(4, 'Bob', 'Brown', 35, NULL, 60000.00);
+
+-- Insert sample data into Projects Table
+INSERT INTO Projects (ProjectID, ProjectName, DepartmentID) VALUES 
+(1, 'Project Alpha', 1),
+(2, 'Project Beta', 2),
+(3, 'Project Gamma', NULL),
+(4, 'Project Delta', 4);
+
+-- Queries for Join Operations
+
+-- 1. Inner Join: Retrieve employees along with their department names
+SELECT e.FirstName, e.LastName, d.DepartmentName
+FROM Employees e
+JOIN Departments d ON e.DepartmentID = d.DepartmentID;
+
+-- 2. Left Join: List all departments with employees, including departments with no employees
+SELECT d.DepartmentName, e.FirstName, e.LastName
+FROM Departments d
+LEFT JOIN Employees e ON d.DepartmentID = e.DepartmentID;
+
+-- 3. Right Join: List all employees with their department names, including employees without a department
+SELECT e.FirstName, e.LastName, d.DepartmentName
+FROM Employees e
+RIGHT JOIN Departments d ON e.DepartmentID = d.DepartmentID;
+
+-- 4. Full Outer Join: Retrieve all departments and employees, including unmatched records
+-- Note: Not all databases support FULL OUTER JOIN. Use UNION of LEFT JOIN and RIGHT JOIN as a workaround.
+SELECT e.FirstName, e.LastName, d.DepartmentName
+FROM Employees e
+LEFT JOIN Departments d ON e.DepartmentID = d.DepartmentID
+UNION
+SELECT e.FirstName, e.LastName, d.DepartmentName
+FROM Employees e
+RIGHT JOIN Departments d ON e.DepartmentID = d.DepartmentID;
+
+-- 5. Cross Join: List all combinations of employees and projects
+SELECT e.FirstName, e.LastName, p.ProjectName
+FROM Employees e
+CROSS JOIN Projects p;
+
+-- Subqueries
+
+-- 6. Subquery to Find Employees with Salary Greater than Average Salary
+SELECT FirstName, LastName
+FROM Employees
+WHERE Salary > (SELECT AVG(Salary) FROM Employees);
+
+-- 7. Subquery to List Departments with More Than One Employee
+SELECT DepartmentName
+FROM Departments
+WHERE DepartmentID IN (
+    SELECT DepartmentID
+    FROM Employees
+    GROUP BY DepartmentID
+    HAVING COUNT(EmployeeID) > 1
+);
+
+-- Views
+
+-- 8. Create a View to Display Employee and Department Information
+CREATE OR REPLACE VIEW EmployeeDepartmentView AS
+SELECT e.EmployeeID, e.FirstName, e.LastName, e.Age, e.Salary, d.DepartmentName
+FROM Employees e
+LEFT JOIN Departments d ON e.DepartmentID = d.DepartmentID;
+
+-- Query the View
+SELECT * FROM EmployeeDepartmentView;
+
+-- 9. Create a View to Show Employees without a Department
+CREATE OR REPLACE VIEW EmployeesWithoutDepartment AS
+SELECT EmployeeID, FirstName, LastName
+FROM Employees
+WHERE DepartmentID IS NULL;
+
+-- Query the View
+SELECT * FROM EmployeesWithoutDepartment;
+
+-- Additional Queries
+
+-- 10. Count Employees in Each Department Using Group By
+SELECT d.DepartmentName, COUNT(e.EmployeeID) AS EmployeeCount
+FROM Departments d
+LEFT JOIN Employees e ON d.DepartmentID = e.DepartmentID
+GROUP BY d.DepartmentName;
+
+-- Clean-up: Drop Views and Tables
+DROP VIEW IF EXISTS EmployeesWithoutDepartment;
+DROP VIEW IF EXISTS EmployeeDepartmentView;
+DROP TABLE IF EXISTS Projects;
+DROP TABLE IF EXISTS Employees;
+DROP TABLE IF EXISTS Departments;
